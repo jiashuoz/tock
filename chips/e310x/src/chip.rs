@@ -10,8 +10,7 @@ use crate::interrupts;
 use crate::uart;
 
 #[derive(Copy, Clone, Default)]
-pub struct RvStoredState {
-}
+pub struct RvStoredState {}
 
 pub struct NullSysCall();
 
@@ -28,8 +27,7 @@ impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
         None
     }
 
-    unsafe fn set_syscall_return_value(&self, _stack_pointer: *const usize, _return_value: isize) {
-    }
+    unsafe fn set_syscall_return_value(&self, _stack_pointer: *const usize, _return_value: isize) {}
 
     unsafe fn pop_syscall_stack_frame(
         &self,
@@ -54,11 +52,13 @@ impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
         stack_pointer: *const usize,
         _state: &mut RvStoredState,
     ) -> (*mut usize, kernel::syscall::ContextSwitchReason) {
-        (stack_pointer as *mut usize, kernel::syscall::ContextSwitchReason::Fault)
+        (
+            stack_pointer as *mut usize,
+            kernel::syscall::ContextSwitchReason::Fault,
+        )
     }
 
-    unsafe fn fault_fmt(&self, _writer: &mut Write) {
-    }
+    unsafe fn fault_fmt(&self, _writer: &mut Write) {}
 
     unsafe fn process_detail_fmt(
         &self,
@@ -68,7 +68,6 @@ impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
     ) {
     }
 }
-
 
 pub struct E310x {
     userspace_kernel_boundary: NullSysCall,

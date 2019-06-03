@@ -4,9 +4,9 @@
 #![feature(crate_visibility_modifier)]
 #![no_std]
 
+pub mod machine_timer;
 pub mod plic;
 pub mod support;
-pub mod machine_timer;
 
 extern "C" {
     // External function defined by the board main.rs.
@@ -29,7 +29,7 @@ extern "C" {
     // Boundaries of the .data section.
     static mut _srelocate: u32;
     static mut _erelocate: u32;
-  }
+}
 
 /// Entry point of all programs (_start).
 ///
@@ -38,7 +38,7 @@ extern "C" {
 /// pointer. Then it calls _start_rust.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(
-  r#"
+    r#"
   .section .riscv.start, "ax"
   .globl _start
   _start:
@@ -72,7 +72,7 @@ global_asm!(
 
   .cfi_endproc
   "#
-  );
+);
 
 /// Setup memory for the kernel.
 ///
@@ -86,11 +86,11 @@ pub unsafe fn init_memory() {
     let mut psrc = &_etext as *const u32;
 
     if psrc != pdest {
-      while (pdest as *const u32) < pend {
-        *pdest = *psrc;
-        pdest = pdest.offset(1);
-        psrc = psrc.offset(1);
-      }
+        while (pdest as *const u32) < pend {
+            *pdest = *psrc;
+            pdest = pdest.offset(1);
+            psrc = psrc.offset(1);
+        }
     }
 
     // Clear the zero segment (BSS)
@@ -98,16 +98,16 @@ pub unsafe fn init_memory() {
     pdest = &mut _szero as *mut u32;
 
     while (pdest as *const u32) < pzero {
-      *pdest = 0;
-      pdest = pdest.offset(1);
+        *pdest = 0;
+        pdest = pdest.offset(1);
     }
-  }
+}
 
 /// Tell the MCU what address the trap handler is located at.
 ///
 /// The trap handler is called on exceptions and for interrupts.
 pub unsafe fn configure_trap_handler() {
-  asm!("
+    asm!("
     // The csrw instruction writes a Control and Status Register (CSR)
     // with a new value.
     //
@@ -128,7 +128,7 @@ pub unsafe fn configure_trap_handler() {
 /// restores caller saved registers and then returns.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(
-  r#"
+    r#"
   .section .riscv.trap, "ax"
   .align 6
   //.p2align 6
@@ -180,23 +180,21 @@ _start_trap:
 
   mret
   "#
-  );
-
+);
 
 /// Trap entry point rust (_start_trap_rust)
 #[export_name = "_start_trap_rust"]
-pub extern "C" fn start_trap_rust() { }
-
+pub extern "C" fn start_trap_rust() {}
 
 // Make sure there is an abort when linking.
 //
 // I don't know why we need this, or why cortex-m doesn't seem to have it.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(
-  r#"
+    r#"
   .section .init
   .globl abort
   abort:
   jal zero, _start
   "#
-  );
+);

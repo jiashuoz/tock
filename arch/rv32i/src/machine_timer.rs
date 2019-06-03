@@ -1,7 +1,7 @@
 //! Create a timer using the Machine Timer registers.
 
 use kernel::common::cells::OptionalCell;
-use kernel::common::registers::{register_bitfields, ReadWrite, ReadOnly};
+use kernel::common::registers::{register_bitfields, ReadOnly, ReadWrite};
 use kernel::common::StaticRef;
 use kernel::hil;
 
@@ -25,11 +25,7 @@ register_bitfields![u64,
     ]
 ];
 
-
-
 pub static mut MACHINETIMER: MachineTimer = MachineTimer::new();
-
-
 
 pub struct MachineTimer {
     registers: StaticRef<MachineTimerRegisters>,
@@ -59,7 +55,9 @@ impl MachineTimer {
     fn disable_machine_timer(&self) {
         // Disable by setting the mtimecmp register to its max value, which
         // we will never hit.
-        self.registers.mtimecmp.write(MTimeCmp::MTIMECMP.val(0xFFFF_FFFF_FFFF_FFFF));
+        self.registers
+            .mtimecmp
+            .write(MTimeCmp::MTIMECMP.val(0xFFFF_FFFF_FFFF_FFFF));
     }
 }
 
@@ -83,7 +81,9 @@ impl hil::time::Alarm for MachineTimer {
     }
 
     fn set_alarm(&self, tics: u32) {
-        self.registers.mtimecmp.write(MTimeCmp::MTIMECMP.val(tics as u64));
+        self.registers
+            .mtimecmp
+            .write(MTimeCmp::MTIMECMP.val(tics as u64));
     }
 
     fn get_alarm(&self) -> u32 {

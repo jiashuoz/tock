@@ -185,7 +185,11 @@ impl hil::uart::Transmit<'a> for Uart<'a> {
         self.tx_client.set(client);
     }
 
-    fn transmit_buffer(&self, tx_data: &'static mut [u8], tx_len: usize) -> (ReturnCode, Option<&'static mut [u8]>) {
+    fn transmit_buffer(
+        &self,
+        tx_data: &'static mut [u8],
+        tx_len: usize,
+    ) -> (ReturnCode, Option<&'static mut [u8]>) {
         let regs = self.registers;
 
         if tx_len == 0 {

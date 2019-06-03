@@ -12,7 +12,7 @@
 #![no_main]
 #![feature(asm)]
 
-use capsules::virtual_uart::{UartDevice, MuxUart};
+use capsules::virtual_uart::{MuxUart, UartDevice};
 use kernel::capabilities;
 use kernel::hil;
 use kernel::Platform;
@@ -32,7 +32,7 @@ pub static mut STACK_MEMORY: [u8; 0x1000] = [0; 0x1000];
 /// A structure representing this platform that holds references to all
 /// capsules for this platform. However, since this board does not support
 /// userspace this can just be empty.
-struct HiFive1 { }
+struct HiFive1 {}
 
 /// Mapping of integer syscalls to objects that implement syscalls.
 impl Platform for HiFive1 {
@@ -105,7 +105,7 @@ pub unsafe fn reset_handler() {
     hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
     hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
 
-    let hifive1 = HiFive1 { };
+    let hifive1 = HiFive1 {};
 
     // Create virtual device for kernel debug.
     let debugger_uart = static_init!(UartDevice, UartDevice::new(uart_mux, false));
