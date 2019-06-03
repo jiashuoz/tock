@@ -96,7 +96,7 @@ impl Uart<'a> {
         // Assume that the clock is running at 384 MHz.
         // let clock_speed = 384_000_000 as u32;
 
-        let clock_speed = 32_000_000 as u32;
+        let clock_speed = 18_000_000 as u32;
 
         //            f_clk
         // f_baud = ---------

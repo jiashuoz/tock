@@ -32,18 +32,18 @@ pub mod io;
 // State for loading and holding applications.
 
 // Number of concurrent processes this platform supports.
-const NUM_PROCS: usize = 4;
+const NUM_PROCS: usize = 1;
 
 // How should the kernel respond when a process faults.
 const FAULT_RESPONSE: kernel::procs::FaultResponse = kernel::procs::FaultResponse::Panic;
 
 // RAM to be shared by all application processes.
 #[link_section = ".app_memory"]
-static mut APP_MEMORY: [u8; 8192] = [0; 8192];
+static mut APP_MEMORY: [u8; 64] = [0; 64];
 
 // Actual memory for holding the active process structures.
 static mut PROCESSES: [Option<&'static kernel::procs::ProcessType>; NUM_PROCS] =
-    [None, None, None, None];
+    [None];
 
 /// Dummy buffer that causes the linker to reserve enough space for the stack.
 #[no_mangle]
@@ -102,7 +102,14 @@ pub unsafe fn reset_handler() {
 
     e310x::prci::PRCI.set_clock_frequency(sifive::prci::ClockFrequency::Freq18Mhz);
 
-    rv32i::enable_plic_interrupts();
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[22]);
+    hil::gpio::Pin::set(&e310x::gpio::PORT[22]);
+
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[19]);
+    hil::gpio::Pin::set(&e310x::gpio::PORT[19]);
+
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
+    hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
 
     let process_mgmt_cap = create_capability!(capabilities::ProcessManagementCapability);
     let main_loop_cap = create_capability!(capabilities::MainLoopCapability);
@@ -126,6 +133,8 @@ pub unsafe fn reset_handler() {
     );
 
     let chip = static_init!(e310x::chip::E310x, e310x::chip::E310x::new());
+
+    chip.enable_plic_interrupts();
 
     // Create a shared UART channel for the console and for kernel debug.
     let uart_mux = static_init!(
@@ -256,6 +265,8 @@ pub unsafe fn reset_handler() {
         // ipc: kernel::ipc::IPC::new(board_kernel),
     };
 
+    // debug_gpio!(0, clear);
+
     // hail.console.initialize();
 
     // Create virtual device for kernel debug.
@@ -279,7 +290,7 @@ pub unsafe fn reset_handler() {
 
     e310x::uart::UART0.initialize_gpio_pins(&e310x::gpio::PORT[17], &e310x::gpio::PORT[16]);
 
-    debug!("Initialization complete. Entering main loop");
+    debug!("yay?Initialization complete. Entering main loop");
 
     // testing some mret jump-around code
 

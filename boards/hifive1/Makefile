@@ -3,16 +3,11 @@
 TARGET=riscv32imac-unknown-none-elf
 PLATFORM=hifive1
 
-# Need this to be different for now
-RUSTFLAGS_FOR_CARGO_LINKING ?= -C link-arg=-Tlayout.ld -C linker=riscv32-unknown-elf-ld
-
-TOOLCHAIN ?= /Users/bradjc/git/riscv-rust-toolchain/toolchain/bin/riscv32-unknown-elf
-
 include ../Makefile.common
 
 flash: target/$(TARGET)/release/$(PLATFORM).elf
-	openocd -f hifive1-openocd.cfg \
-		-c "flash protect 0 64 last off; program $<; resume 0x40400000; exit"
+	openocd \
+		-c "source [find board/sifive-hifive1.cfg]; flash protect 0 64 last off; program $<; resume 0x20400000; exit"
 
 
 # TOCKLOADER=tockloader

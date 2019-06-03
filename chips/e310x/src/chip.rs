@@ -11,7 +11,6 @@ use crate::uart;
 
 #[derive(Copy, Clone, Default)]
 pub struct RvStoredState {
-    regs: [usize; 8],
 }
 
 pub struct NullSysCall();
@@ -25,17 +24,17 @@ impl NullSysCall {
 impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
     type StoredState = RvStoredState;
 
-    unsafe fn get_syscall(&self, stack_pointer: *const usize) -> Option<kernel::syscall::Syscall> {
+    unsafe fn get_syscall(&self, _stack_pointer: *const usize) -> Option<kernel::syscall::Syscall> {
         None
     }
 
-    unsafe fn set_syscall_return_value(&self, stack_pointer: *const usize, return_value: isize) {
+    unsafe fn set_syscall_return_value(&self, _stack_pointer: *const usize, _return_value: isize) {
     }
 
     unsafe fn pop_syscall_stack_frame(
         &self,
         stack_pointer: *const usize,
-        state: &mut RvStoredState,
+        _state: &mut RvStoredState,
     ) -> *mut usize {
         stack_pointer as *mut usize
     }
@@ -43,9 +42,9 @@ impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
     unsafe fn push_function_call(
         &self,
         stack_pointer: *const usize,
-        remaining_stack_memory: usize,
-        callback: kernel::procs::FunctionCall,
-        state: &RvStoredState,
+        _remaining_stack_memory: usize,
+        _callback: kernel::procs::FunctionCall,
+        _state: &RvStoredState,
     ) -> Result<*mut usize, *mut usize> {
         Err(stack_pointer as *mut usize)
     }
@@ -53,7 +52,7 @@ impl kernel::syscall::UserspaceKernelBoundary for NullSysCall {
     unsafe fn switch_to_process(
         &self,
         stack_pointer: *const usize,
-        state: &mut RvStoredState,
+        _state: &mut RvStoredState,
     ) -> (*mut usize, kernel::syscall::ContextSwitchReason) {
         (stack_pointer as *mut usize, kernel::syscall::ContextSwitchReason::Fault)
     }
@@ -80,6 +79,12 @@ impl E310x {
         E310x {
             userspace_kernel_boundary: NullSysCall::new(),
         }
+    }
+
+    pub unsafe fn enable_plic_interrupts(&self) {
+        rv32i::plic::disable_all();
+        rv32i::plic::clear_all_pending();
+        rv32i::plic::enable_all();
     }
 }
 

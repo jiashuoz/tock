@@ -66,41 +66,6 @@ global_asm!(
   // Set s0 (the frame pointer) to the start of the stack.
   add s0, sp, zero
 
-
-  // PMP PMP PMP
-  // PMP PMP PMP
-  // PMP PMP PMP
-  // PMP PMP PMP
-  // TODO: Add a real PMP driver!!
-  // Take some time to disable the PMP.
-
-  // Set the first region address to 0xFFFFFFFF. When using top-of-range mode
-  // this will include the entire address space.
-  lui t0, %hi(0xFFFFFFFF)
-  addi t0, t0, %lo(0xFFFFFFFF)
-  csrw 0x3b0, t0   // CSR=pmpaddr0
-
-  // Set the first region to use top-of-range and allow everything.
-  // This is equivalent to:
-  // R=1, W=1, X=1, A=01, L=0
-  li t0, 0x0F
-  csrw 0x3a0, t0   // CSR=pmpcfg0
-
-
-
-  // Initialize machine timer mtimecmp to disable the machine timer interrupt.
-  li t0, -1                    // Set mtimecmp to 0xFFFFFFFF
-  lui t1, %hi(0x02004000)      // Load the address of mtimecmp to t1
-  addi t1, t1, %lo(0x02004000) // Load the address of mtimecmp to t1
-  sw t0, 0(t1)                 // mtimecmp is 64 bits, set to all ones
-  sw t0, 4(t1)                 // mtimecmp is 64 bits, set to all ones
-
-
-
-
-
-
-
   // With that initial setup out of the way, we now branch to the main code,
   // likely defined in a board's main.rs.
   jal zero, reset_handler
@@ -148,9 +113,7 @@ pub unsafe fn configure_trap_handler() {
     //
     // CSR 0x305 (mtvec, 'Machine trap-handler base address.') sets the address
     // of the trap handler. We do not care about its old value, so we don't
-    // bother reading it. We want to enable direct CLIC mode so we set the
-    // second lowest bit.
-    ori  $0, $0, 0x02  // Set CLIC direct mode
+    // bother reading it.
     csrw 0x305, $0     // Write the mtvec CSR.
     "
     :
@@ -216,35 +179,8 @@ global_asm!(
 
   _start_trap:
 
-  // First check which privilege level we came from. If we came from user mode
-  // then we need to handle that differently from if we came from kernel mode.
-  // Luckily in the E21, the MPP bits are included in the mcause register.
-  csrr t0, 0x342              // CSR=0x342=mcause
-  srli t1, t0, 28             // Shift the mcause 28 bits to the right (MPP bits)
-  andi t1, t1, 0x3            // `and` to get only the bottom two MPP bits
-  beq  t1, x0, _from_app      // If MPP=00 then we came from user mode
+  // No usermode support, so we unconditionally assume we came from the kernel.
 
-
-
-  // If we came from mcause.MPP=11 then we came from the kernel.
-
-
-
-  // lui t1, %hi(0xfFFFFFFF)
-  // addi t1, t1, %lo(0xfFFFFFFF)
-  // // li t1, 0x000000ff
-  // bgt t0, t1, _from_app
-  // // j _from_app
-
-  // Check if it came from the kernel (0x00001800 is 11 for machine mode)
-  // csrr t0, 0x300
-  // lui t1, %hi(0x00001800)
-  // addi t1, t1, %lo(0x00001800)
-  // or  t2, t0, t1
-  // beq  t0, t2, _from_kernel
-
-
-  _from_kernel:
   addi sp, sp, -16*4
 
   sw ra, 0*4(sp)
@@ -288,104 +224,6 @@ global_asm!(
   // set mstatus how we expect
   lui t4, %hi(0x00001800)
   addi t4, t4, %lo(0x00001800)
-  csrw 0x300, t4
-
-  mret
-
-
-  _from_app:
-
-  // Save the app registers to the StoredState array.
-  // Kernel SP was saved in mscratch, and stored state
-  // pointer is on kernel stack
-  csrr t0, 0x340
-  lw t1, 30*4(t0)
-
-  sw x1,0*4(t1)
-  sw x3,1*4(t1)
-  sw x4,2*4(t1)
-  sw x5,3*4(t1)
-  sw x6,4*4(t1)
-  sw x7,5*4(t1)
-  sw x8,6*4(t1)
-  sw x9,7*4(t1)
-  sw x10,8*4(t1)
-  sw x11,9*4(t1)
-  sw x12,10*4(t1)
-  sw x13,11*4(t1)
-  sw x14,12*4(t1)
-  sw x15,13*4(t1)
-  sw x16,14*4(t1)
-  sw x17,15*4(t1)
-  sw x18,16*4(t1)
-  sw x19,17*4(t1)
-  sw x20,18*4(t1)
-  sw x21,19*4(t1)
-  sw x22,20*4(t1)
-  sw x23,21*4(t1)
-  sw x24,22*4(t1)
-  sw x25,23*4(t1)
-  sw x26,24*4(t1)
-  sw x27,25*4(t1)
-  sw x28,26*4(t1)
-  sw x29,27*4(t1)
-  sw x30,28*4(t1)
-  sw x31,29*4(t1)
-
-  // Restore kernel sp and registers.
-
-  csrr sp, 0x340
-  lw  x1,0*4(sp)
-  lw  x3,1*4(sp)
-  lw  x4,2*4(sp)
-  lw  x5,3*4(sp)
-  lw  x6,4*4(sp)
-  lw  x7,5*4(sp)
-  lw  x8,6*4(sp)
-  lw  x9,7*4(sp)
-  lw  x10,8*4(sp)
-  lw  x11,9*4(sp)
-  lw  x12,10*4(sp)
-  lw  x13,11*4(sp)
-  lw  x14,12*4(sp)
-  lw  x15,13*4(sp)
-  lw  x16,14*4(sp)
-  lw  x17,15*4(sp)
-  lw  x18,16*4(sp)
-  lw  x19,17*4(sp)
-  lw  x20,18*4(sp)
-  lw  x21,19*4(sp)
-  lw  x22,20*4(sp)
-  lw  x23,21*4(sp)
-  lw  x24,22*4(sp)
-  lw  x25,23*4(sp)
-  lw  x26,24*4(sp)
-  lw  x27,25*4(sp)
-  lw  x28,26*4(sp)
-  lw  x29,27*4(sp)
-  lw  x30,28*4(sp)
-  lw  x31,29*4(sp)
-
-  addi sp, sp, 31*4
-
-  //get pc
-  // lw  t0, 32*4(sp)
-  // csrw 0x341, t0
-
-  //save mcause in mscratch
-  csrr t3, 0x342
-  csrw 0x340, t3
-
-
-  // Load the location in syscall.rs that we want to return to.
-  lui t1, %hi(_return_to_kernel)
-  addi t1, t1, %lo(_return_to_kernel)
-  csrw 0x341, t1
-
-
-  // set mstatus how we expect
-  lui t4, %hi(0x00001808)
-  addi t4, t4, %lo(0x00001808)
   csrw 0x300, t4
 
   mret
