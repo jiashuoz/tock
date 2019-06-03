@@ -122,49 +122,6 @@ pub unsafe fn configure_trap_handler() {
     : "volatile");
 }
 
-
-// /// Enable all PLIC interrupts so that individual peripheral drivers do not have
-// /// to manage these.
-// pub unsafe fn enable_clic_interrupts() {
-
-//     INT_CON.disable_all();
-//     INT_CON.clear_all_pending();
-//     INT_CON.enable_all();
-
-//     // let m: u32;
-//     // let METAL_MIE_INTERRUPT: u32 = 0x00000008;
-
-//     // asm! ("csrrs %0, mstatus, %1" : "=r"(m) : "r"(METAL_MIE_INTERRUPT));
-
-
-
-
-
-//     // // enable mie 1
-//     // asm! ("
-//     //   // CSR 0x304 mie
-//     //   csrw 0x304, $0
-//     //   "
-//     //   :
-//     //   : "r"(0x00000001)
-//     //   :
-//     //   : "volatile");
-
-//     // enable machine mode interrupts
-//     asm! ("
-//       lui t0, %hi(0x0001808)       // Load the value we want mstatus to be.
-//       addi t0, t0, %lo(0x0001808)  // This should keep the core in M-Mode and
-//                                    // enable machine mode interrupts.
-//       csrw 0x300, t0               // Save to the mstatus CSR.
-//       "
-//       :
-//       :
-//       :
-//       : "volatile");
-// }
-
-
-
 /// Trap entry point (_start_trap)
 ///
 /// Saves caller saved registers ra, t0..6, a0..7, calls _start_trap_rust,
@@ -177,7 +134,7 @@ global_asm!(
   //.p2align 6
   .global _start_trap
 
-  _start_trap:
+_start_trap:
 
   // No usermode support, so we unconditionally assume we came from the kernel.
 
@@ -221,79 +178,15 @@ global_asm!(
 
   addi sp, sp, 16*4
 
-  // set mstatus how we expect
-  lui t4, %hi(0x00001800)
-  addi t4, t4, %lo(0x00001800)
-  csrw 0x300, t4
-
   mret
   "#
   );
 
 
-// /// Trap entry point (_start_trap)
-// ///
-// /// Saves caller saved registers ra, t0..6, a0..7, calls _start_trap_rust,
-// /// restores caller saved registers and then returns.
-// #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-// global_asm!(
-//     r#"
-//   .section .riscv.trap, "ax"
-//   .p2align 6
-//   .global _start_trap
-
-// _start_trap:
-//   mret
-// "#
-// );
-
 /// Trap entry point rust (_start_trap_rust)
-///
-/// mcause is read to determine the cause of the trap. XLEN-1 bit indicates
-/// if it's an interrupt or an exception. The result is converted to an element
-/// of the Interrupt or Exception enum and passed to handle_interrupt or
-/// handle_exception.
-// #[link_section = ".trap.rust"]
 #[export_name = "_start_trap_rust"]
-pub extern "C" fn start_trap_rust() {
+pub extern "C" fn start_trap_rust() { }
 
-
-    // TODO!!!
-    // TODO!!!
-    // TODO!!!
-    // TODO!!!
-    //
-    // We need to disable the interrupt that fired when we get here so that it
-    // cannot re-fire.
-    //
-    // unsafe {CLIC.disable_pending_interrupts();}
-    //
-    // TODO!!!
-    // TODO!!!
-    // TODO!!!
-    // TODO!!!
-
-
-
-    // while(true){};
-    // // dispatch trap to handler
-    // trap_handler(mcause::read().cause());
-    // // mstatus, remain in M-mode after mret
-    // unsafe {
-    //     mstatus::set_mpp(mstatus::MPP::Machine);
-    // }
-
-    unsafe{
-      asm! ("
-        // CSR 0x300 mstatus
-        csrw 0x300, $0
-        "
-        :
-        : "r"(0x00001808)
-        :
-        : "volatile");
-    }
-  }
 
 // Make sure there is an abort when linking.
 //
